@@ -1,0 +1,22 @@
+{
+  "name": "@recode/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "recode": "./src/main.ts"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "dev": "bun --watch src/main.ts",
+    "start": "bun src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@recode/ai": "workspace:*",
+    "@recode/agent": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

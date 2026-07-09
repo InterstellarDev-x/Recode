@@ -1,0 +1,22 @@
+{
+  "name": "@recode/ai",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@anthropic-ai/bedrock-sdk": "^0.32.0",
+    "@anthropic-ai/sdk": "^0.110.0",
+    "openai": "^4.104.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

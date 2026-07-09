@@ -1,0 +1,21 @@
+{
+  "name": "@recode/agent",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@recode/ai": "workspace:*",
+    "@sinclair/typebox": "^0.34.49"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
