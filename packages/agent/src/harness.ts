@@ -1,6 +1,6 @@
 import type { Message, Provider } from "@recode/ai"
 import { userMessage, assistantMessage, type MessagePart, type ToolCallPart } from "@recode/ai"
-import { agentLoop } from "./loop.js"
+import { agentLoop, appendThinking, rememberThinkingSignature } from "./loop.js"
 import { Session } from "./session.js"
 import { type AgentConfig, type AgentEvent, type QueueMode, type Result, AgentHarnessError, ok, err } from "./types.js"
 import {
@@ -315,6 +315,7 @@ export class AgentHarness {
     // Build the loop config, wiring the queues to the callbacks the loop expects.
     const loopConfig: AgentConfig = {
       ...this.config,
+      sessionId: this.session.id,
       getSteeringMessages: async () => this.steerQueue.drain(),
       getFollowUpMessages: async () => this.followUpQueue.drain(),
     }
@@ -339,6 +340,10 @@ export class AgentHarness {
           const last = assistantParts[assistantParts.length - 1]
           if (last?.type === "text") last.text += event.delta
           else assistantParts.push({ type: "text", text: event.delta })
+        } else if (event.type === "thinking_delta") {
+          appendThinking(assistantParts, event.delta, this.config.reasoningEffort)
+        } else if (event.type === "thinking_signature") {
+          rememberThinkingSignature(assistantParts, event.signature, this.config.reasoningEffort)
         } else if (event.type === "tool_call_start") {
           pendingToolCalls.set(event.id, { name: event.name, inputJson: "" })
         } else if (event.type === "tool_call_delta") {

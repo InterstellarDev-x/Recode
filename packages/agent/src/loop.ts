@@ -1,5 +1,5 @@
-import type { Provider } from "@recode/ai"
-import { assistantMessage, userMessage, type Message, type MessagePart, type ToolCallPart } from "@recode/ai"
+import type { Provider, ReasoningEffort } from "@recode/ai"
+import { assistantMessage, userMessage, type Message, type MessagePart, type ThinkingPart, type ToolCallPart } from "@recode/ai"
 import type { AgentConfig, AgentEvent, AgentTool } from "./types.js"
 import { validateToolInput } from "./validate.js"
 
@@ -61,6 +61,8 @@ export async function* agentLoop(
         ...(config.system !== undefined ? { system: config.system } : {}),
         messages: history,
         tools: config.tools.map((t) => t.definition),
+        ...(config.sessionId !== undefined ? { sessionId: config.sessionId } : {}),
+        ...(config.reasoningEffort !== undefined ? { reasoningEffort: config.reasoningEffort } : {}),
         ...(config.maxTokens !== undefined ? { maxTokens: config.maxTokens } : {}),
         ...(config.timeoutMs !== undefined ? { timeoutMs: config.timeoutMs } : {}),
         ...(config.maxRetries !== undefined ? { maxRetries: config.maxRetries } : {}),
@@ -81,7 +83,10 @@ export async function* agentLoop(
           else assistantParts.push({ type: "text", text: event.delta })
         } else if (event.type === "thinking_delta") {
           yield event
-          // accumulate into a thinking part (not sent back to the model)
+          appendThinking(assistantParts, event.delta, config.reasoningEffort)
+        } else if (event.type === "thinking_signature") {
+          yield event
+          rememberThinkingSignature(assistantParts, event.signature, config.reasoningEffort)
         } else if (event.type === "tool_call_start") {
           hasToolCalls = true
           pending.set(event.id, { name: event.name, inputJson: "" })
@@ -303,4 +308,33 @@ async function executeParallel(
     if (!terminate) allTerminate = false
   }
   return { parts: resultParts, terminate: allTerminate }
+}
+
+function lastThinking(parts: MessagePart[]): ThinkingPart | undefined {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const part = parts[i]
+    if (part?.type === "thinking") return part
+  }
+  return undefined
+}
+
+/** Keep reasoning on the assistant message so the next Responses call can replay it. */
+export function appendThinking(parts: MessagePart[], delta: string, effort?: ReasoningEffort): void {
+  const existing = lastThinking(parts)
+  if (existing && parts[parts.length - 1] === existing) {
+    existing.thinking += delta
+    if (effort && !existing.reasoningEffort) existing.reasoningEffort = effort
+    return
+  }
+  parts.push({ type: "thinking", thinking: delta, ...(effort ? { reasoningEffort: effort } : {}) })
+}
+
+export function rememberThinkingSignature(parts: MessagePart[], signature: string, effort?: ReasoningEffort): void {
+  const existing = lastThinking(parts) ?? (() => {
+    const created: ThinkingPart = { type: "thinking", thinking: "", ...(effort ? { reasoningEffort: effort } : {}) }
+    parts.push(created)
+    return created
+  })()
+  existing.thinkingSignature = signature
+  if (effort && !existing.reasoningEffort) existing.reasoningEffort = effort
 }

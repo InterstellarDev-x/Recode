@@ -1,4 +1,4 @@
-import type { Message, ToolDefinition, Usage } from "@recode/ai"
+import type { Message, ReasoningEffort, ToolDefinition, Usage } from "@recode/ai"
 
 // ---------------------------------------------------------------------------
 // Result<T,E> -- Pi-style typed return values (no throw for known error paths)
@@ -105,6 +105,7 @@ export type AgentEvent =
   | { type: "turn_start"; turnIndex: number }
   | { type: "text_delta"; delta: string }
   | { type: "thinking_delta"; delta: string }
+  | { type: "thinking_signature"; signature: string }
   | { type: "tool_call_start"; id: string; name: string }
   | { type: "tool_call_delta"; id: string; delta: string }
   | { type: "tool_call_end"; id: string }
@@ -180,6 +181,10 @@ export interface AgentConfig {
   timeoutMs?: number
   maxRetries?: number
   maxRetryDelayMs?: number
+  /** Forwarded to the provider as the prompt-cache key. The harness sets this from the session. */
+  sessionId?: string
+  /** Reasoning models only. A change is sent as a configuration_update item. */
+  reasoningEffort?: ReasoningEffort
   /** Default tool execution mode; per-tool override via AgentTool.executionMode */
   toolExecution?: ToolExecutionMode
   /** Called before each tool; return { block: true } to prevent execution */

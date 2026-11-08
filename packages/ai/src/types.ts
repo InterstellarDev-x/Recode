@@ -5,10 +5,14 @@ export interface TextPart {
   text: string
 }
 
+export type ReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max"
+
 export interface ThinkingPart {
   type: "thinking"
   thinking: string
   thinkingSignature?: string
+  /** Effort recorded on this reply, so a later change can be sent as configuration_update. */
+  reasoningEffort?: ReasoningEffort
   redacted?: boolean
 }
 
@@ -60,6 +64,7 @@ export interface ToolDefinition {
 export type StreamEvent =
   | { type: "text_delta"; delta: string }
   | { type: "thinking_delta"; delta: string }
+  | { type: "thinking_signature"; signature: string }
   | { type: "tool_call_start"; id: string; name: string }
   | { type: "tool_call_delta"; id: string; delta: string }
   | { type: "tool_call_end"; id: string }
@@ -90,6 +95,10 @@ export interface GenerateOptions {
   timeoutMs?: number
   maxRetries?: number
   maxRetryDelayMs?: number
+  /** Prompt-cache key and the `session-id` request header. */
+  sessionId?: string
+  /** Reasoning models only. A change is sent as a configuration_update item. */
+  reasoningEffort?: ReasoningEffort
 }
 
 export interface Provider {
