@@ -7,6 +7,7 @@ export interface StatusBarProps {
   provider: string; model: string; sessionId: string
   isRunning: boolean
   isAutoCompacting?: boolean  // true while auto-compaction is running
+  spinnerFrame?: string       // current frame for animated running/compaction status
   inputTokens: number; outputTokens: number
   cacheReadTokens: number; cacheWriteTokens: number
   totalCostUsd: number
@@ -113,9 +114,9 @@ export function renderStatusBar(p: StatusBarProps): string[] {
 
   // Status dot
   const statusDot = p.isAutoCompacting
-    ? `${T.orange}⠿ auto-compacting…${T.reset}${T.panelBg}`
+    ? `${T.orange}${p.spinnerFrame ?? "⠿"} auto-compacting…${T.reset}${T.panelBg}`
     : p.isRunning
-      ? `${T.green}● working${T.reset}${T.panelBg}`
+      ? `${T.green}${p.spinnerFrame ?? "●"} working${T.reset}${T.panelBg}`
       : `${T.dim}○ ready${T.reset}${T.panelBg}`
 
   // #1 -- formatted token counts

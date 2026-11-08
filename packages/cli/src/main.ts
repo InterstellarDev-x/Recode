@@ -359,6 +359,8 @@ async function main(): Promise<void> {
   let streamingText        = ""
   let thinkingText         = ""
   let isRunning            = false
+  let activitySpinnerFrame = 0
+  let activitySpinnerTimer: ReturnType<typeof setInterval> | undefined
   let inputTokens          = 0
   let outputTokens         = 0
   let cacheReadTokens      = 0
@@ -409,7 +411,23 @@ async function main(): Promise<void> {
   // Load persisted input history
   await inputState.loadHistory(HISTORY_FILE)
 
+  function syncActivitySpinner(): void {
+    const shouldAnimate = isRunning || isAutoCompacting
+    if (shouldAnimate && activitySpinnerTimer === undefined) {
+      activitySpinnerFrame = 0
+      activitySpinnerTimer = setInterval(() => {
+        activitySpinnerFrame = (activitySpinnerFrame + 1) % SPINNER_FRAMES.length
+        draw()
+      }, SPINNER_INTERVAL_MS)
+    } else if (!shouldAnimate && activitySpinnerTimer !== undefined) {
+      clearInterval(activitySpinnerTimer)
+      activitySpinnerTimer = undefined
+      activitySpinnerFrame = 0
+    }
+  }
+
   function draw(): void {
+    syncActivitySpinner()
     renderer.render(buildFrame())
   }
 
@@ -549,6 +567,7 @@ async function main(): Promise<void> {
       sessionId: sessionName ?? sessionId.slice(0, 8),
       isRunning,
       isAutoCompacting,
+      spinnerFrame: SPINNER_FRAMES[activitySpinnerFrame] ?? "⠋",
       inputTokens, outputTokens,
       cacheReadTokens, cacheWriteTokens,
       totalCostUsd,
